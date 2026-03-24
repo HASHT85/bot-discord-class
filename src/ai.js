@@ -1,7 +1,7 @@
 const { getGuildConfig } = require('./config');
 
 const WRM_URL = 'https://api.wrmgpt.com/v1/chat/completions';
-const DEFAULT_MODEL = 'wormgpt-v8-lite';
+const DEFAULT_MODEL = 'wormgpt-v7';
 
 // Historique des conversations par guild
 const conversationHistory = new Map();
@@ -94,18 +94,42 @@ async function callAIProvider(model, messages) {
       'Authorization': `Bearer ${process.env.WRM_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ model, messages }),
+    body: JSON.stringify({
+      model,
+      messages,
+      stream: false // Désactiver explicitement le streaming pour éviter le format SSE
+    }),
   });
 
+  const responseText = await response.text();
+
   if (!response.ok) {
-    const errorText = await response.text();
     const error = new Error(`API error ${response.status}`);
     error.status = response.status;
-    error.body = errorText;
+    error.body = responseText;
     throw error;
   }
 
-  return response.json();
+  try {
+    // Si la réponse commence par "data: ", c'est du format SSE (Server-Sent Events)
+    // même si on a demandé stream: false, certains fournisseurs le font quand même.
+    let cleanJson = responseText.trim();
+    if (cleanJson.startsWith('data: ')) {
+      // On prend seulement la première ligne si c'est du SSE type OpenRouter
+      cleanJson = cleanJson.split('\n')[0].replace(/^data: /, '').trim();
+    }
+
+    // Si la réponse finit par [DONE], on le retire (cas rare en stream: false)
+    if (cleanJson.endsWith('[DONE]')) {
+      cleanJson = cleanJson.replace(/\[DONE\]$/, '').trim();
+    }
+
+    return JSON.parse(cleanJson);
+  } catch (err) {
+    console.error('❌ Erreur de parsing JSON:', err.message);
+    console.error('Raw response:', responseText);
+    throw new Error(`Format de réponse invalide de l'API WRM`);
+  }
 }
 
 /**
@@ -116,7 +140,7 @@ async function chat(guildId, userMessage, username, attachments = []) {
   const history = getHistory(guildId);
 
   let model = config.model || DEFAULT_MODEL;
-  
+
   // Nettoyer le préfixe wrm: ou groq: si jamais il est resté dans la config
   if (model.includes(':')) {
     model = model.split(':')[1];
