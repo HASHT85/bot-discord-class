@@ -9,7 +9,6 @@ module.exports = {
 
   async execute(interaction) {
     const config = getGuildConfig(interaction.guildId);
-    const effortEmoji = { low: '🟢', medium: '🟡', high: '🔴' };
     const currentModel = MODELS.find(m => m.value === config.model);
 
     const embed = new EmbedBuilder()
@@ -31,16 +30,7 @@ module.exports = {
           value: currentModel?.vision ? '✅ Activée' : '❌ Désactivée',
           inline: true,
         },
-        {
-          name: '🧠 Reasoning',
-          value: config.reasoning ? '✅ Activé' : '❌ Désactivé',
-          inline: true,
-        },
-        {
-          name: '⚡ Effort',
-          value: `${effortEmoji[config.reasoningEffort]} ${config.reasoningEffort}`,
-          inline: true,
-        },
+
         {
           name: '💬 System Prompt',
           value: config.systemPrompt.length > 200

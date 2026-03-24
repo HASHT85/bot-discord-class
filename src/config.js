@@ -8,8 +8,6 @@ const CONFIG_FILE = path.join(CONFIG_DIR, 'guilds.json');
 const DEFAULT_CONFIG = {
   channelId: process.env.DEFAULT_CHANNEL_ID || null,
   model: 'wormgpt-v7',
-  reasoning: false,
-  reasoningEffort: 'medium',
   systemPrompt: process.env.SYSTEM_PROMPT || 'Tu es un assistant intelligent et utile. Réponds de manière claire et concise en français.',
 };
 
