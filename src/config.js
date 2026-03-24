@@ -10,7 +10,7 @@ const DEFAULT_CONFIG = {
   model: 'google/gemini-2.0-flash-001',
   reasoning: false,
   reasoningEffort: 'medium',
-  systemPrompt: 'Tu es un assistant intelligent et utile. Réponds de manière claire et concise en français.',
+  systemPrompt: process.env.SYSTEM_PROMPT || 'Tu es un assistant intelligent et utile. Réponds de manière claire et concise en français.',
 };
 
 // Stockage en mémoire
