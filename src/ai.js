@@ -1,4 +1,5 @@
 const { getGuildConfig } = require('./config');
+const pdf = require('pdf-parse');
 
 const WRM_URL = 'https://api.wrmgpt.com/v1/chat/completions';
 const DEFAULT_MODEL = 'wormgpt-v7';
@@ -53,7 +54,23 @@ async function buildMessageContent(text, attachments, username) {
     const url = attachment.url;
     const contentType = attachment.contentType || '';
 
-    if (contentType.startsWith('image/') || contentType === 'application/pdf') {
+    if (contentType === 'application/pdf') {
+      try {
+        const response = await fetch(url);
+        const buffer = await response.arrayBuffer();
+        const data = await pdf(Buffer.from(buffer));
+        content.push({
+          type: 'text',
+          text: `[Contenu du PDF "${attachment.name}"]: \n${data.text}`,
+        });
+      } catch (err) {
+        console.error('Erreur PDF:', err.message);
+        content.push({
+          type: 'text',
+          text: `[Fichier PDF: ${attachment.name} - erreur d'extraction de texte]`,
+        });
+      }
+    } else if (contentType.startsWith('image/')) {
       try {
         const response = await fetch(url);
         const buffer = await response.arrayBuffer();
@@ -66,7 +83,7 @@ async function buildMessageContent(text, attachments, username) {
       } catch (err) {
         content.push({
           type: 'text',
-          text: `[Fichier: ${attachment.name} - erreur de téléchargement]`,
+          text: `[Fichier Image: ${attachment.name} - erreur de téléchargement]`,
         });
       }
     } else {
