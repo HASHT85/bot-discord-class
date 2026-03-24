@@ -206,6 +206,7 @@ async function chat(guildId, userMessage, username, attachments = []) {
   } catch (err) {
     history.pop(); // Retirer le message user en cas d'erreur
     console.error(`❌ Erreur WRM:`, err.message);
+    if (err.body) console.error(`Body:`, err.body);
     throw new Error(`⏳ Erreur lors de l'appel à l'IA: ${err.message}`);
   }
 }
