@@ -4,13 +4,10 @@ const { updateGuildConfig, getGuildConfig } = require('../config');
 // Modèles disponibles (gratuits sur OpenRouter)
 const MODELS = [
   { name: '⚡ Step 3.5 Flash (free)', value: 'stepfun/step-3.5-flash:free', vision: false },
-  { name: '💎 Gemma 3 4B (free)', value: 'google/gemma-3-4b-it:free', vision: true },
-  { name: '💎 Gemma 3 12B (free)', value: 'google/gemma-3-12b-it:free', vision: true },
-  { name: '💎 Gemma 3 27B (free)', value: 'google/gemma-3-27b-it:free', vision: true },
-  { name: '🦙 Llama 3.2 11B Vision (free)', value: 'meta-llama/llama-3.2-11b-vision-instruct:free', vision: true },
   { name: '🔓 Venice Uncensored (free)', value: 'cognitivecomputations/dolphin-mistral-24b-venice-edition:free', vision: false },
   { name: '🟢 Nemotron 3 Super 120B (free)', value: 'nvidia/nemotron-3-super-120b-a12b:free', vision: false },
   { name: '🤖 MiMo v2 Flash', value: 'xiaomi/mimo-v2-flash', vision: false },
+  { name: '✨ Gemini 2.0 Flash (vision)', value: 'google/gemini-2.0-flash-001', vision: true },
 ];
 
 module.exports = {
