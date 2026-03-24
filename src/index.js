@@ -200,7 +200,53 @@ client.once(Events.ClientReady, async () => {
   } else {
     console.log('⚠️  Aucun channel configuré. Utilise /setchannel dans Discord.');
   }
+
+  // ─── Patchnote automatique ──────────────────────────────────────
+  await announcePatchnote(config);
 });
+
+/**
+ * Annonce le patchnote dans le channel configuré si nouvelle version
+ */
+async function announcePatchnote(config) {
+  try {
+    const versionData = require('../version.json');
+    const currentVersion = versionData.version;
+    const lastAnnounced = config.lastAnnouncedVersion || null;
+
+    // Si même version, ne rien faire
+    if (lastAnnounced === currentVersion) return;
+    if (!config.channelId) return;
+
+    const channel = await client.channels.fetch(config.channelId).catch(() => null);
+    if (!channel) return;
+
+    // Trouver le changelog de la version actuelle
+    const entry = versionData.changelog.find(c => c.version === currentVersion);
+    if (!entry) return;
+
+    const { EmbedBuilder } = require('discord.js');
+    const embed = new EmbedBuilder()
+      .setTitle(`📋 Patchnote — v${entry.version}`)
+      .setDescription(`## ${entry.title}`)
+      .addFields({
+        name: '📝 Changements',
+        value: entry.changes.join('\n'),
+      })
+      .setColor(0x7c3aed)
+      .setFooter({ text: `spy_H v${entry.version} • ${entry.date}` })
+      .setTimestamp();
+
+    await channel.send({ embeds: [embed] });
+    console.log(`📋 Patchnote v${currentVersion} envoyé !`);
+
+    // Sauvegarder la version annoncée
+    const { updateGuildConfig } = require('./config');
+    updateGuildConfig(process.env.GUILD_ID, { lastAnnouncedVersion: currentVersion });
+  } catch (err) {
+    console.error('⚠️  Erreur patchnote:', err.message);
+  }
+}
 
 // ─── Connexion ──────────────────────────────────────────────────────
 client.login(process.env.DISCORD_TOKEN);

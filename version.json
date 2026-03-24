@@ -1,0 +1,30 @@
+{
+  "version": "1.1.0",
+  "changelog": [
+    {
+      "version": "1.1.0",
+      "date": "2024-03-24",
+      "title": "🖼️ Multimodal + Sélection de modèle",
+      "changes": [
+        "✨ Nouveau : commande `/model` — choisis parmi 5 modèles LLM gratuits",
+        "🖼️ Nouveau : support multimodal — envoie des images et le bot les analyse",
+        "🔄 Auto-switch : bascule automatiquement sur Gemma 3 27B quand une image est détectée",
+        "📄 Support des fichiers PDF en pièce jointe",
+        "🚀 Déploiement sur VPS Hostinger pour plus de stabilité"
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "2024-03-24",
+      "title": "🎉 Lancement initial",
+      "changes": [
+        "🤖 Bot Discord connecté à OpenRouter (Step 3.5 Flash)",
+        "💬 Commande `/setchannel` — définir le channel de réponse",
+        "⚙️ Commande `/config` — activer/désactiver le reasoning",
+        "📝 Commande `/systemprompt` — personnaliser la personnalité du bot",
+        "🔄 Commande `/reset` — réinitialiser l'historique",
+        "📊 Commande `/status` — afficher la configuration"
+      ]
+    }
+  ]
+}
