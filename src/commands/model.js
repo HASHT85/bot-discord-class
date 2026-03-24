@@ -4,6 +4,7 @@ const { updateGuildConfig, getGuildConfig } = require('../config');
 // Modèles disponibles (via WRM)
 const MODELS = [
   { name: '⚡ WormGPT v7', value: 'wormgpt-v7', vision: false },
+  { name: '⚡ WormGPT v8 Lite', value: 'wormgpt-v8-lite', vision: false },
 ];
 
 module.exports = {

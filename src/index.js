@@ -177,7 +177,7 @@ client.once(Events.ClientReady, async () => {
   console.log('');
   console.log('╔══════════════════════════════════════════════╗');
   console.log(`║  🤖 Bot connecté : ${client.user.tag.padEnd(25)}║`);
-  console.log('║  📡 Modèle : WormGPT-v8-lite                ║');
+  console.log('║  📡 Modèle : WormGPT-v7                     ║');
   console.log('║  🔗 API : WRM                               ║');
   console.log('╚══════════════════════════════════════════════╝');
   console.log('');
