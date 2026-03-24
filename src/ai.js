@@ -1,8 +1,9 @@
 const { getGuildConfig } = require('./config');
-const pdf = require('pdf-parse');
 
 const WRM_URL = 'https://api.wrmgpt.com/v1/chat/completions';
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL = 'wormgpt-v7';
+const ANALYSIS_MODEL = 'google/gemini-2.0-flash-001';
 
 // Historique des conversations par guild
 const conversationHistory = new Map();
@@ -25,76 +26,64 @@ function resetHistory(guildId) {
 }
 
 /**
- * Télécharge une image et la convertit en base64
+ * Analyse les médias (images, PDF) avec Gemini via OpenRouter
  */
-async function imageUrlToBase64(url) {
-  const response = await fetch(url);
-  const buffer = await response.arrayBuffer();
-  const base64 = Buffer.from(buffer).toString('base64');
-  const contentType = response.headers.get('content-type') || 'image/png';
-  return { base64, contentType };
-}
-
-/**
- * Construit le contenu du message avec les pièces jointes (multimodal)
- */
-async function buildMessageContent(text, attachments, username) {
-  const content = [];
-
-  // Ajouter le texte
-  if (text) {
-    content.push({
-      type: 'text',
-      text: `[${username}]: ${text}`,
-    });
+async function analyzeMediaWithGemini(attachments) {
+  if (!process.env.OPENROUTER_API_KEY) {
+    console.error('❌ OPENROUTER_API_KEY manquante');
+    return null;
   }
 
-  // Traiter les pièces jointes
-  for (const attachment of attachments) {
-    const url = attachment.url;
-    const contentType = attachment.contentType || '';
+  const content = [
+    {
+      type: 'text',
+      text: "Analyse ces fichiers (PDF ou images) et extraits-en tout le contenu textuel et décris les images de manière très détaillée. Ce rapport servira de contexte à une autre IA pour répondre à l'utilisateur. Sois le plus précis possible."
+    }
+  ];
 
-    if (contentType === 'application/pdf') {
+  for (const attachment of attachments) {
+    const contentType = attachment.contentType || '';
+    // Gemini supporte nativement PDF et Images
+    if (contentType.startsWith('image/') || contentType === 'application/pdf') {
       try {
-        const response = await fetch(url);
-        const buffer = await response.arrayBuffer();
-        const data = await pdf(Buffer.from(buffer));
-        content.push({
-          type: 'text',
-          text: `[Contenu du PDF "${attachment.name}"]: \n${data.text}`,
-        });
-      } catch (err) {
-        console.error('Erreur PDF:', err.message);
-        content.push({
-          type: 'text',
-          text: `[Fichier PDF: ${attachment.name} - erreur d'extraction de texte]`,
-        });
-      }
-    } else if (contentType.startsWith('image/')) {
-      try {
-        const response = await fetch(url);
+        const response = await fetch(attachment.url);
         const buffer = await response.arrayBuffer();
         const base64 = Buffer.from(buffer).toString('base64');
         const dataUri = `data:${contentType};base64,${base64}`;
+        
         content.push({
-          type: 'image_url',
-          image_url: { url: dataUri },
+          type: 'image_url', // Format standard multimédia
+          image_url: { url: dataUri }
         });
       } catch (err) {
-        content.push({
-          type: 'text',
-          text: `[Fichier Image: ${attachment.name} - erreur de téléchargement]`,
-        });
+        console.error(`❌ Erreur téléchargement fichier ${attachment.name}:`, err.message);
       }
-    } else {
-      content.push({
-        type: 'text',
-        text: `[Fichier joint: ${attachment.name} (${contentType})]`,
-      });
     }
   }
 
-  return content;
+  if (content.length === 1) return null; // Rien à analyser
+
+  try {
+    const response = await fetch(OPENROUTER_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://github.com/HASHT85/bot-discord-class',
+        'X-Title': 'Discord Multi-Bot',
+      },
+      body: JSON.stringify({
+        model: ANALYSIS_MODEL,
+        messages: [{ role: 'user', content }],
+      }),
+    });
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || null;
+  } catch (err) {
+    console.error('❌ Erreur Analyse Gemini:', err.message);
+    return null;
+  }
 }
 
 /**
@@ -114,7 +103,7 @@ async function callAIProvider(model, messages) {
     body: JSON.stringify({
       model,
       messages,
-      stream: false // Désactiver explicitement le streaming pour éviter le format SSE
+      stream: false
     }),
   });
 
@@ -128,29 +117,22 @@ async function callAIProvider(model, messages) {
   }
 
   try {
-    // Si la réponse commence par "data: ", c'est du format SSE (Server-Sent Events)
-    // même si on a demandé stream: false, certains fournisseurs le font quand même.
     let cleanJson = responseText.trim();
     if (cleanJson.startsWith('data: ')) {
-      // On prend seulement la première ligne si c'est du SSE type OpenRouter
       cleanJson = cleanJson.split('\n')[0].replace(/^data: /, '').trim();
     }
-
-    // Si la réponse finit par [DONE], on le retire (cas rare en stream: false)
     if (cleanJson.endsWith('[DONE]')) {
       cleanJson = cleanJson.replace(/\[DONE\]$/, '').trim();
     }
-
     return JSON.parse(cleanJson);
   } catch (err) {
     console.error('❌ Erreur de parsing JSON:', err.message);
-    console.error('Raw response:', responseText);
     throw new Error(`Format de réponse invalide de l'API WRM`);
   }
 }
 
 /**
- * Envoie un message au LLM via WRM
+ * Envoie un message au LLM via WRM (avec analyse préalable via Gemini si besoin)
  */
 async function chat(guildId, userMessage, username, attachments = []) {
   const config = getGuildConfig(guildId);
@@ -158,28 +140,30 @@ async function chat(guildId, userMessage, username, attachments = []) {
 
   let model = config.model || DEFAULT_MODEL;
 
-  // Nettoyer le préfixe wrm: ou groq: si jamais il est resté dans la config
-  if (model.includes(':')) {
-    model = model.split(':')[1];
+  // 1. Analyse des médias par Gemini si nécessaire
+  let analysisReport = null;
+  if (attachments.length > 0) {
+    console.log(`🔄 Analyse de ${attachments.length} pièce(s) jointe(s) avec Gemini Flash...`);
+    analysisReport = await analyzeMediaWithGemini(attachments);
   }
 
-  // Construire le contenu du message
-  let messageContent;
-  if (attachments.length > 0) {
-    messageContent = await buildMessageContent(userMessage, attachments, username);
+  // 2. Construction du message final pour WRM
+  let finalContent;
+  if (analysisReport) {
+    finalContent = `[Rapport d'analyse des fichiers envoyés par ${username}]:\n${analysisReport}\n\n[Message de ${username}]: ${userMessage}`;
   } else {
-    messageContent = `[${username}]: ${userMessage}`;
+    finalContent = `[${username}]: ${userMessage}`;
   }
 
   // Ajouter le message utilisateur à l'historique
-  history.push({ role: 'user', content: messageContent });
+  history.push({ role: 'user', content: finalContent });
 
-  // Limiter l'historique à 50 messages
+  // Limiter l'historique
   if (history.length > 50) {
     history.splice(0, history.length - 50);
   }
 
-  // Messages pour l'API
+  // Messages pour l'API WRM
   const messages = [
     { role: 'system', content: config.systemPrompt },
     ...history,
@@ -193,8 +177,7 @@ async function chat(guildId, userMessage, username, attachments = []) {
       throw new Error('Pas de réponse du modèle');
     }
 
-    const choice = data.choices[0];
-    const assistantMessage = choice.message.content;
+    const assistantMessage = data.choices[0].message.content;
 
     // Ajouter la réponse à l'historique
     history.push({ role: 'assistant', content: assistantMessage });
@@ -204,7 +187,7 @@ async function chat(guildId, userMessage, username, attachments = []) {
       model: data.model || model,
     };
   } catch (err) {
-    history.pop(); // Retirer le message user en cas d'erreur
+    history.pop();
     console.error(`❌ Erreur WRM:`, err.message);
     if (err.body) console.error(`Body:`, err.body);
     throw new Error(`⏳ Erreur lors de l'appel à l'IA: ${err.message}`);
