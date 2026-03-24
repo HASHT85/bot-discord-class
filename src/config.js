@@ -6,7 +6,7 @@ const CONFIG_FILE = path.join(CONFIG_DIR, 'guilds.json');
 
 // Configuration par défaut pour un serveur
 const DEFAULT_CONFIG = {
-  channelId: null,
+  channelId: process.env.DEFAULT_CHANNEL_ID || null,
   model: 'stepfun/step-3.5-flash:free',
   reasoning: false,
   reasoningEffort: 'medium',
