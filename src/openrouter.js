@@ -226,12 +226,8 @@ async function chat(guildId, userMessage, username, attachments = []) {
       };
     } catch (err) {
       lastError = err;
-      if (err.status === 429 || err.status === 404 || err.status === 503) {
-        console.log(`⚠️  ${tryModel} indisponible (${err.status}), essai suivant...`);
-        continue; // Essayer le modèle suivant
-      }
-      // Autre erreur → stop
-      break;
+      console.log(`⚠️  ${tryModel} échoué (${err.status || err.message}), essai suivant...`);
+      continue; // Toujours essayer le modèle suivant
     }
   }
 
