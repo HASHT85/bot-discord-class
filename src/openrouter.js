@@ -2,16 +2,13 @@ const { getGuildConfig } = require('./config');
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL = 'stepfun/step-3.5-flash:free';
-const VISION_FALLBACK = 'meta-llama/llama-4-maverick:free';
+const VISION_FALLBACK = 'google/gemma-3-27b-it:free';
 
 // Modèles qui supportent la vision
 const VISION_MODELS = [
-  'meta-llama/llama-4-maverick:free',
-  'meta-llama/llama-4-scout:free',
+  'google/gemma-3-4b-it:free',
+  'google/gemma-3-12b-it:free',
   'google/gemma-3-27b-it:free',
-  'qwen/qwen-2.5-vl-72b-instruct:free',
-  'moonshotai/kimi-vl-a3b-thinking:free',
-  'nvidia/nemotron-nano-12b-2-vl:free',
   'meta-llama/llama-3.2-11b-vision-instruct:free',
 ];
 
