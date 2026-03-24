@@ -5,8 +5,7 @@ const { updateGuildConfig, getGuildConfig } = require('../config');
 const MODELS = [
   { name: '✨ Gemini 2.0 Flash (vision)', value: 'google/gemini-2.0-flash-001', vision: true },
   { name: '💻 Qwen 2.5 Coder 32B', value: 'qwen/qwen-2.5-coder-32b-instruct', vision: false },
-  { name: '⚡ Llama 3.3 70B (Groq)', value: 'groq:llama-3.3-70b-versatile', vision: false },
-  { name: '🚀 Mixtral 8x7b (Groq)', value: 'groq:mixtral-8x7b-32768', vision: false },
+  { name: '⚡ worm', value: 'wormgpt-v8-lite', vision: false },
 ];
 
 module.exports = {

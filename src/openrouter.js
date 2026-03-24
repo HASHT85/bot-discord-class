@@ -1,7 +1,7 @@
 const { getGuildConfig } = require('./config');
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_URL = 'https://api.wrmgpt.com/v1/chat/completions';
 const DEFAULT_MODEL = 'google/gemini-2.0-flash-001';
 const VISION_FALLBACK = 'google/gemini-2.0-flash-001';
 
@@ -111,7 +111,7 @@ async function callAIProvider(model, messages, reasoning) {
   };
 
   let actualModel = model;
-  
+
   // Si le modèle commence par 'groq:', on utilise l'API Groq directement
   if (model.startsWith('groq:')) {
     actualModel = model.replace('groq:', '');
@@ -127,7 +127,7 @@ async function callAIProvider(model, messages, reasoning) {
   }
 
   const body = { model: actualModel, messages };
-  
+
   // Le reasoning ne fonctionne pour l'instant que sur OpenRouter
   if (reasoning && url === OPENROUTER_URL) {
     body.reasoning = { effort: reasoning };
