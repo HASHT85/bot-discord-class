@@ -4,12 +4,13 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL = 'stepfun/step-3.5-flash:free';
 const VISION_FALLBACK = 'google/gemma-3-27b-it:free';
 
-// Modèles qui supportent la vision (ordre de fallback)
+// Modèles qui supportent la vision (ordre de fallback, payant en dernier recours)
 const VISION_MODELS = [
   'google/gemma-3-27b-it:free',
   'google/gemma-3-12b-it:free',
   'google/gemma-3-4b-it:free',
   'meta-llama/llama-3.2-11b-vision-instruct:free',
+  'google/gemini-2.0-flash-001',  // payant ~$0.0005/image, toujours dispo
 ];
 
 // Modèles texte de fallback
