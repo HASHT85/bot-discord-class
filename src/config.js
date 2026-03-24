@@ -7,7 +7,7 @@ const CONFIG_FILE = path.join(CONFIG_DIR, 'guilds.json');
 // Configuration par défaut pour un serveur
 const DEFAULT_CONFIG = {
   channelId: process.env.DEFAULT_CHANNEL_ID || null,
-  model: 'stepfun/step-3.5-flash:free',
+  model: 'google/gemini-2.0-flash-001',
   reasoning: false,
   reasoningEffort: 'medium',
   systemPrompt: 'Tu es un assistant intelligent et utile. Réponds de manière claire et concise en français.',
