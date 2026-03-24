@@ -9,12 +9,10 @@ const VISION_MODELS = [
   'google/gemini-2.0-flash-001',
 ];
 
-// Modèles texte de fallback
+// Modèles texte de fallback (tous payants, toujours dispo)
 const TEXT_FALLBACK_MODELS = [
   'google/gemini-2.0-flash-001',
-  'cognitivecomputations/dolphin-mistral-24b-venice-edition:free',
-  'nvidia/nemotron-3-super-120b-a12b:free',
-  'xiaomi/mimo-v2-flash',
+  'qwen/qwen-2.5-coder-32b-instruct',
 ];
 
 function isVisionModel(model) {

@@ -5,9 +5,6 @@ const { updateGuildConfig, getGuildConfig } = require('../config');
 const MODELS = [
   { name: '✨ Gemini 2.0 Flash (vision)', value: 'google/gemini-2.0-flash-001', vision: true },
   { name: '💻 Qwen 2.5 Coder 32B', value: 'qwen/qwen-2.5-coder-32b-instruct', vision: false },
-  { name: '🔓 Venice Uncensored', value: 'cognitivecomputations/dolphin-mistral-24b-venice-edition:free', vision: false },
-  { name: '🟢 Nemotron 3 Super 120B', value: 'nvidia/nemotron-3-super-120b-a12b:free', vision: false },
-  { name: '🤖 MiMo v2 Flash', value: 'xiaomi/mimo-v2-flash', vision: false },
 ];
 
 module.exports = {
