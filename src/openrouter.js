@@ -1,6 +1,7 @@
 const { getGuildConfig } = require('./config');
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const DEFAULT_MODEL = 'google/gemini-2.0-flash-001';
 const VISION_FALLBACK = 'google/gemini-2.0-flash-001';
 
@@ -98,22 +99,43 @@ async function buildMessageContent(text, attachments, username) {
 }
 
 /**
- * Fait un appel API à OpenRouter
+ * Fait un appel API au fournisseur approprié (OpenRouter ou Groq)
  */
-async function callOpenRouter(model, messages, reasoning) {
-  const body = { model, messages };
-  if (reasoning) {
+async function callAIProvider(model, messages, reasoning) {
+  let url = OPENROUTER_URL;
+  let headers = {
+    'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+    'Content-Type': 'application/json',
+    'HTTP-Referer': 'https://github.com/bot-discord-class',
+    'X-Title': 'Bot Discord Class',
+  };
+
+  let actualModel = model;
+  
+  // Si le modèle commence par 'groq:', on utilise l'API Groq directement
+  if (model.startsWith('groq:')) {
+    actualModel = model.replace('groq:', '');
+    url = GROQ_URL;
+    headers = {
+      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+      'Content-Type': 'application/json',
+    };
+
+    if (!process.env.GROQ_API_KEY) {
+      throw new Error('GROQ_API_KEY manquante dans le fichier .env');
+    }
+  }
+
+  const body = { model: actualModel, messages };
+  
+  // Le reasoning ne fonctionne pour l'instant que sur OpenRouter
+  if (reasoning && url === OPENROUTER_URL) {
     body.reasoning = { effort: reasoning };
   }
 
-  const response = await fetch(OPENROUTER_URL, {
+  const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://github.com/bot-discord-class',
-      'X-Title': 'Bot Discord Class',
-    },
+    headers,
     body: JSON.stringify(body),
   });
 
@@ -187,7 +209,7 @@ async function chat(guildId, userMessage, username, attachments = []) {
   for (const tryModel of modelsToTry) {
     try {
       console.log(`🔄 Essai ${tryModel}...`);
-      const data = await callOpenRouter(tryModel, messages, reasoning);
+      const data = await callAIProvider(tryModel, messages, reasoning);
 
       if (!data.choices || data.choices.length === 0) {
         throw new Error('Pas de réponse du modèle');
