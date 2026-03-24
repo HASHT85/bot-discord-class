@@ -4,11 +4,19 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL = 'stepfun/step-3.5-flash:free';
 const VISION_FALLBACK = 'google/gemma-3-27b-it:free';
 
-// Modèles qui supportent la vision
+// Modèles qui supportent la vision (ordre de fallback)
 const VISION_MODELS = [
-  'google/gemma-3-4b-it:free',
-  'google/gemma-3-12b-it:free',
   'google/gemma-3-27b-it:free',
+  'google/gemma-3-12b-it:free',
+  'google/gemma-3-4b-it:free',
+  'meta-llama/llama-3.2-11b-vision-instruct:free',
+];
+
+// Modèles texte de fallback
+const TEXT_FALLBACK_MODELS = [
+  'stepfun/step-3.5-flash:free',
+  'google/gemma-3-27b-it:free',
+  'google/gemma-3-4b-it:free',
   'meta-llama/llama-3.2-11b-vision-instruct:free',
 ];
 
@@ -67,13 +75,11 @@ async function buildMessageContent(text, attachments, username) {
     const contentType = attachment.contentType || '';
 
     if (contentType.startsWith('image/')) {
-      // Image : envoyer comme URL directe (OpenRouter le supporte)
       content.push({
         type: 'image_url',
         image_url: { url },
       });
     } else if (contentType === 'application/pdf') {
-      // PDF : envoyer comme fichier
       try {
         const response = await fetch(url);
         const buffer = await response.arrayBuffer();
@@ -92,7 +98,6 @@ async function buildMessageContent(text, attachments, username) {
         });
       }
     } else {
-      // Autres fichiers : mentionner le nom
       content.push({
         type: 'text',
         text: `[Fichier joint: ${attachment.name} (${contentType})]`,
@@ -104,24 +109,62 @@ async function buildMessageContent(text, attachments, username) {
 }
 
 /**
- * Envoie un message au LLM via OpenRouter et retourne la réponse
+ * Fait un appel API à OpenRouter
+ */
+async function callOpenRouter(model, messages, reasoning) {
+  const body = { model, messages };
+  if (reasoning) {
+    body.reasoning = { effort: reasoning };
+  }
+
+  const response = await fetch(OPENROUTER_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://github.com/bot-discord-class',
+      'X-Title': 'Bot Discord Class',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    const error = new Error(`API error ${response.status}`);
+    error.status = response.status;
+    error.body = errorText;
+    throw error;
+  }
+
+  return response.json();
+}
+
+/**
+ * Envoie un message au LLM via OpenRouter avec retry + fallback
  */
 async function chat(guildId, userMessage, username, attachments = []) {
   const config = getGuildConfig(guildId);
   const history = getHistory(guildId);
 
-  // Détecter si il y a des images dans les pièces jointes
+  // Détecter si il y a des images
   const hasImages = attachments.some(a => (a.contentType || '').startsWith('image/'));
 
-  // Auto-switch : utiliser le modèle vision si images détectées
+  // Choisir le modèle et la liste de fallback
   let model = config.model || DEFAULT_MODEL;
   let usedVisionFallback = false;
-  if (hasImages && !isVisionModel(model)) {
-    model = VISION_FALLBACK;
-    usedVisionFallback = true;
+  let fallbackModels;
+
+  if (hasImages) {
+    if (!isVisionModel(model)) {
+      model = VISION_FALLBACK;
+      usedVisionFallback = true;
+    }
+    fallbackModels = VISION_MODELS.filter(m => m !== model);
+  } else {
+    fallbackModels = TEXT_FALLBACK_MODELS.filter(m => m !== model);
   }
 
-  // Construire le contenu du message (texte simple ou multimodal)
+  // Construire le contenu du message
   let messageContent;
   if (attachments.length > 0) {
     messageContent = await buildMessageContent(userMessage, attachments, username);
@@ -130,82 +173,67 @@ async function chat(guildId, userMessage, username, attachments = []) {
   }
 
   // Ajouter le message utilisateur à l'historique
-  history.push({
-    role: 'user',
-    content: messageContent,
-  });
+  history.push({ role: 'user', content: messageContent });
 
   // Limiter l'historique à 50 messages
   if (history.length > 50) {
     history.splice(0, history.length - 50);
   }
 
-  // Construire les messages pour l'API
+  // Messages pour l'API
   const messages = [
-    {
-      role: 'system',
-      content: config.systemPrompt,
-    },
+    { role: 'system', content: config.systemPrompt },
     ...history,
   ];
 
-  // Construire le body de la requête
-  const body = {
-    model,
-    messages,
-  };
+  const reasoning = config.reasoning ? config.reasoningEffort : null;
 
-  // Ajouter le reasoning si activé
-  if (config.reasoning) {
-    body.reasoning = {
-      effort: config.reasoningEffort,
-    };
+  // Essayer le modèle principal + fallbacks
+  const modelsToTry = [model, ...fallbackModels];
+  let lastError = null;
+
+  for (const tryModel of modelsToTry) {
+    try {
+      console.log(`🔄 Essai ${tryModel}...`);
+      const data = await callOpenRouter(tryModel, messages, reasoning);
+
+      if (!data.choices || data.choices.length === 0) {
+        throw new Error('Pas de réponse du modèle');
+      }
+
+      const choice = data.choices[0];
+      const assistantMessage = choice.message.content;
+      const reasoningResult = choice.message.reasoning || null;
+
+      // Ajouter la réponse à l'historique
+      history.push({ role: 'assistant', content: assistantMessage });
+
+      const usedFallback = tryModel !== model;
+      if (usedFallback) {
+        console.log(`✅ Fallback réussi sur ${tryModel}`);
+      }
+
+      return {
+        content: assistantMessage,
+        reasoning: reasoningResult,
+        model: data.model || tryModel,
+        usedVisionFallback: usedVisionFallback || (hasImages && tryModel !== (config.model || DEFAULT_MODEL)),
+        usedFallbackModel: usedFallback ? tryModel : null,
+      };
+    } catch (err) {
+      lastError = err;
+      if (err.status === 429 || err.status === 404 || err.status === 503) {
+        console.log(`⚠️  ${tryModel} indisponible (${err.status}), essai suivant...`);
+        continue; // Essayer le modèle suivant
+      }
+      // Autre erreur → stop
+      break;
+    }
   }
 
-  try {
-    const response = await fetch(OPENROUTER_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://github.com/bot-discord-class',
-        'X-Title': 'Bot Discord Class',
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`OpenRouter API error ${response.status}: ${errorText}`);
-    }
-
-    const data = await response.json();
-
-    if (!data.choices || data.choices.length === 0) {
-      throw new Error('Pas de réponse du modèle');
-    }
-
-    const choice = data.choices[0];
-    const assistantMessage = choice.message.content;
-    const reasoning = choice.message.reasoning || null;
-
-    // Ajouter la réponse à l'historique
-    history.push({
-      role: 'assistant',
-      content: assistantMessage,
-    });
-
-    return {
-      content: assistantMessage,
-      reasoning: reasoning,
-      model: data.model || model,
-      usedVisionFallback,
-    };
-  } catch (err) {
-    // Retirer le dernier message user en cas d'erreur
-    history.pop();
-    throw err;
-  }
+  // Tous les modèles ont échoué
+  history.pop(); // Retirer le message user
+  throw new Error('⏳ Tous les modèles gratuits sont temporairement surchargés. Réessaie dans quelques secondes !');
 }
 
 module.exports = {

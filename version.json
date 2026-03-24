@@ -1,6 +1,18 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "changelog": [
+    {
+      "version": "1.2.0",
+      "date": "2024-03-24",
+      "title": "🔄 Retry automatique + Patchnotes",
+      "changes": [
+        "🔄 Nouveau : retry automatique — si un modèle est surchargé, le bot essaie un autre modèle gratuit",
+        "📋 Nouveau : commande `/patchnote` — voir l'historique des mises à jour",
+        "📢 Nouveau : patchnote automatique envoyé dans le channel au redémarrage",
+        "🛡️ Amélioration : messages d'erreur plus clairs au lieu du JSON brut",
+        "🖼️ Fix : modèle vision corrigé (Gemma 3 27B au lieu de Llama 4)"
+      ]
+    },
     {
       "version": "1.1.0",
       "date": "2024-03-24",
