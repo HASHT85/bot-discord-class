@@ -119,16 +119,6 @@ client.on(Events.MessageCreate, async message => {
     // Construire la réponse
     let response = result.content;
 
-    // Indiquer si le modèle vision a été utilisé automatiquement
-    if (result.usedVisionFallback) {
-      response = `-# 🖼️ Image détectée → modèle vision utilisé automatiquement\n${response}`;
-    }
-
-    // Indiquer si un modèle de fallback a été utilisé
-    if (result.usedFallbackModel) {
-      response = `-# 🔄 Modèle principal occupé → fallback sur ${result.usedFallbackModel.split('/').pop()}\n${response}`;
-    }
-
     // Afficher le reasoning si présent et activé
     if (result.reasoning && config.reasoning) {
       const reasoningText = result.reasoning.length > 1000
