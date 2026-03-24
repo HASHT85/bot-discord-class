@@ -71,17 +71,23 @@ async function buildMessageContent(text, attachments, username) {
     const url = attachment.url;
     const contentType = attachment.contentType || '';
 
-    if (contentType.startsWith('image/')) {
-      content.push({
-        type: 'image_url',
-        image_url: { url },
-      });
-    } else if (contentType === 'application/pdf') {
-      // PDF : envoyer comme URL (supporté par Gemini Flash)
-      content.push({
-        type: 'image_url',
-        image_url: { url },
-      });
+    if (contentType.startsWith('image/') || contentType === 'application/pdf') {
+      try {
+        // Télécharger et convertir en base64 (les URLs Discord ne sont pas accessibles par l'API)
+        const response = await fetch(url);
+        const buffer = await response.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString('base64');
+        const dataUri = `data:${contentType};base64,${base64}`;
+        content.push({
+          type: 'image_url',
+          image_url: { url: dataUri },
+        });
+      } catch (err) {
+        content.push({
+          type: 'text',
+          text: `[Fichier: ${attachment.name} - erreur de téléchargement]`,
+        });
+      }
     } else {
       content.push({
         type: 'text',
