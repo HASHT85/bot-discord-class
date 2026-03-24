@@ -1,11 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { updateGuildConfig, getGuildConfig } = require('../config');
 
-// Modèles disponibles (gratuits sur OpenRouter)
+// Modèles disponibles (via WRM)
 const MODELS = [
-  { name: '✨ Gemini 2.0 Flash (vision)', value: 'google/gemini-2.0-flash-001', vision: true },
-  { name: '💻 Qwen 2.5 Coder 32B', value: 'qwen/qwen-2.5-coder-32b-instruct', vision: false },
-  { name: '⚡ worm', value: 'wormgpt-v8-lite', vision: false },
+  { name: '⚡ WormGPT v8 Lite', value: 'wormgpt-v8-lite', vision: false },
 ];
 
 module.exports = {

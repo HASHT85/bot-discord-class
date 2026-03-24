@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { resetHistory } = require('../openrouter');
+const { resetHistory } = require('../ai');
 
 module.exports = {
   data: new SlashCommandBuilder()

@@ -30,7 +30,7 @@
       "date": "2024-03-24",
       "title": "🎉 Lancement initial",
       "changes": [
-        "🤖 Bot Discord connecté à OpenRouter (Step 3.5 Flash)",
+        "🤖 Bot Discord connecté à WRM (WormGPT v8 Lite)",
         "💬 Commande `/setchannel` — définir le channel de réponse",
         "⚙️ Commande `/config` — activer/désactiver le reasoning",
         "📝 Commande `/systemprompt` — personnaliser la personnalité du bot",

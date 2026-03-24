@@ -1,7 +1,7 @@
 {
   "name": "bot-discord-class",
   "version": "1.0.0",
-  "description": "Bot Discord connecté à OpenRouter (Step 3.5 Flash free) - configurable via slash commands",
+  "description": "Bot Discord connecté à WRM (WormGPT v8 Lite) - configurable via slash commands",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

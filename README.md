@@ -1,6 +1,6 @@
-# 🤖 Bot Discord — Step 3.5 Flash (OpenRouter)
+# 🤖 Bot Discord — WormGPT v8 Lite (WRM)
 
-Bot Discord configurable via slash commands, connecté à l'API OpenRouter pour chatter avec le modèle **Step 3.5 Flash (free)**.
+Bot Discord configurable via slash commands, connecté à l'API WRM pour chatter avec le modèle **WormGPT v8 Lite**.
 
 ## ✨ Fonctionnalités
 
@@ -17,7 +17,7 @@ Bot Discord configurable via slash commands, connecté à l'API OpenRouter pour 
 ### 1. Prérequis
 - [Node.js](https://nodejs.org) v18+
 - Un bot Discord créé sur le [Developer Portal](https://discord.com/developers/applications)
-- Une clé API [OpenRouter](https://openrouter.ai/keys)
+- Une clé API [WRM](https://api.wrmgpt.com)
 
 ### 2. Configuration
 
@@ -36,7 +36,7 @@ cp .env.example .env
 Remplis le `.env` avec tes valeurs :
 ```env
 DISCORD_TOKEN=ton_token_discord
-OPENROUTER_API_KEY=ta_cle_openrouter
+WRM_API_KEY=ta_cle_wrm
 GUILD_ID=id_du_serveur
 ```
 
@@ -64,7 +64,7 @@ npm run dev
 ├── src/
 │   ├── index.js          # Point d'entrée
 │   ├── config.js         # Gestion de la config par serveur
-│   ├── openrouter.js     # Appels API OpenRouter
+│   ├── ai.js             # Appels API WRM
 │   └── commands/
 │       ├── setchannel.js  # /setchannel
 │       ├── config.js      # /config

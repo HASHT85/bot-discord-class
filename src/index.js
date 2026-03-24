@@ -13,10 +13,10 @@ const {
 const fs = require('fs');
 const path = require('path');
 const { getGuildConfig } = require('./config');
-const { chat } = require('./openrouter');
+const { chat } = require('./ai');
 
 // ─── Vérification des variables d'environnement ────────────────────
-const requiredEnv = ['DISCORD_TOKEN', 'OPENROUTER_API_KEY', 'GUILD_ID'];
+const requiredEnv = ['DISCORD_TOKEN', 'WRM_API_KEY', 'GUILD_ID'];
 for (const env of requiredEnv) {
   if (!process.env[env]) {
     console.error(`❌ Variable d'environnement manquante : ${env}`);
@@ -120,12 +120,7 @@ client.on(Events.MessageCreate, async message => {
     let response = result.content;
 
     // Afficher le reasoning si présent et activé
-    if (result.reasoning && config.reasoning) {
-      const reasoningText = result.reasoning.length > 1000
-        ? result.reasoning.substring(0, 1000) + '...'
-        : result.reasoning;
-      response = `> 🧠 **Reasoning:**\n> ${reasoningText.split('\n').join('\n> ')}\n\n${response}`;
-    }
+    // Le reasoning n'est plus supporté avec le passage à WRM seul
 
     // Discord limite les messages à 2000 caractères
     if (response.length <= 2000) {
@@ -182,8 +177,8 @@ client.once(Events.ClientReady, async () => {
   console.log('');
   console.log('╔══════════════════════════════════════════════╗');
   console.log(`║  🤖 Bot connecté : ${client.user.tag.padEnd(25)}║`);
-  console.log('║  📡 Modèle : Step 3.5 Flash (free)          ║');
-  console.log('║  🔗 API : OpenRouter                        ║');
+  console.log('║  📡 Modèle : WormGPT-v8-lite                ║');
+  console.log('║  🔗 API : WRM                               ║');
   console.log('╚══════════════════════════════════════════════╝');
   console.log('');
 

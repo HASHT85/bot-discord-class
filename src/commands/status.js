@@ -48,7 +48,7 @@ module.exports = {
             : config.systemPrompt,
         }
       )
-      .setFooter({ text: 'via OpenRouter API' })
+      .setFooter({ text: 'via WRM API' })
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], ephemeral: true });

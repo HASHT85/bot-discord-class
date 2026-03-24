@@ -7,7 +7,7 @@ const CONFIG_FILE = path.join(CONFIG_DIR, 'guilds.json');
 // Configuration par défaut pour un serveur
 const DEFAULT_CONFIG = {
   channelId: process.env.DEFAULT_CHANNEL_ID || null,
-  model: 'google/gemini-2.0-flash-001',
+  model: 'wormgpt-v8-lite',
   reasoning: false,
   reasoningEffort: 'medium',
   systemPrompt: process.env.SYSTEM_PROMPT || 'Tu es un assistant intelligent et utile. Réponds de manière claire et concise en français.',
