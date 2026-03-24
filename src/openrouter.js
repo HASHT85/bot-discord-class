@@ -77,23 +77,11 @@ async function buildMessageContent(text, attachments, username) {
         image_url: { url },
       });
     } else if (contentType === 'application/pdf') {
-      try {
-        const response = await fetch(url);
-        const buffer = await response.arrayBuffer();
-        const base64 = Buffer.from(buffer).toString('base64');
-        content.push({
-          type: 'file',
-          file: {
-            filename: attachment.name || 'document.pdf',
-            data: `data:application/pdf;base64,${base64}`,
-          },
-        });
-      } catch (err) {
-        content.push({
-          type: 'text',
-          text: `[Fichier joint: ${attachment.name} - impossible de traiter]`,
-        });
-      }
+      // PDF : envoyer comme URL (supporté par Gemini Flash)
+      content.push({
+        type: 'image_url',
+        image_url: { url },
+      });
     } else {
       content.push({
         type: 'text',
@@ -143,8 +131,11 @@ async function chat(guildId, userMessage, username, attachments = []) {
   const config = getGuildConfig(guildId);
   const history = getHistory(guildId);
 
-  // Détecter si il y a des images
-  const hasImages = attachments.some(a => (a.contentType || '').startsWith('image/'));
+  // Détecter si il y a des images ou PDFs (contenu multimodal)
+  const hasImages = attachments.some(a => {
+    const ct = (a.contentType || '');
+    return ct.startsWith('image/') || ct === 'application/pdf';
+  });
 
   // Choisir le modèle et la liste de fallback
   let model = config.model || DEFAULT_MODEL;
