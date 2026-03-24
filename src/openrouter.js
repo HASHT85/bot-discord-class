@@ -18,6 +18,9 @@ const TEXT_FALLBACK_MODELS = [
   'google/gemma-3-27b-it:free',
   'google/gemma-3-4b-it:free',
   'meta-llama/llama-3.2-11b-vision-instruct:free',
+  'cognitivecomputations/dolphin-mistral-24b-venice-edition:free',
+  'nvidia/nemotron-3-super-120b-a12b:free',
+  'xiaomi/mimo-v2-flash',
 ];
 
 function isVisionModel(model) {

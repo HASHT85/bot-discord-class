@@ -8,6 +8,9 @@ const MODELS = [
   { name: '💎 Gemma 3 12B (free)', value: 'google/gemma-3-12b-it:free', vision: true },
   { name: '💎 Gemma 3 27B (free)', value: 'google/gemma-3-27b-it:free', vision: true },
   { name: '🦙 Llama 3.2 11B Vision (free)', value: 'meta-llama/llama-3.2-11b-vision-instruct:free', vision: true },
+  { name: '🔓 Venice Uncensored (free)', value: 'cognitivecomputations/dolphin-mistral-24b-venice-edition:free', vision: false },
+  { name: '🟢 Nemotron 3 Super 120B (free)', value: 'nvidia/nemotron-3-super-120b-a12b:free', vision: false },
+  { name: '🤖 MiMo v2 Flash', value: 'xiaomi/mimo-v2-flash', vision: false },
 ];
 
 module.exports = {
