@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { getGuildConfig } = require('../config');
+const { MODELS } = require('./model');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -9,6 +10,7 @@ module.exports = {
   async execute(interaction) {
     const config = getGuildConfig(interaction.guildId);
     const effortEmoji = { low: '🟢', medium: '🟡', high: '🔴' };
+    const currentModel = MODELS.find(m => m.value === config.model);
 
     const embed = new EmbedBuilder()
       .setTitle('🤖 Configuration du Bot')
@@ -17,6 +19,16 @@ module.exports = {
         {
           name: '📌 Channel',
           value: config.channelId ? `<#${config.channelId}>` : '❌ Non défini — utilise `/setchannel`',
+          inline: true,
+        },
+        {
+          name: '📡 Modèle',
+          value: currentModel ? currentModel.name : config.model || 'Step 3.5 Flash',
+          inline: true,
+        },
+        {
+          name: '🖼️ Vision',
+          value: currentModel?.vision ? '✅ Activée' : '❌ Désactivée',
           inline: true,
         },
         {
@@ -36,7 +48,7 @@ module.exports = {
             : config.systemPrompt,
         }
       )
-      .setFooter({ text: 'Step 3.5 Flash (free) via OpenRouter' })
+      .setFooter({ text: 'via OpenRouter API' })
       .setTimestamp();
 
     await interaction.reply({ embeds: [embed], ephemeral: true });

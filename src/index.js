@@ -110,13 +110,19 @@ client.on(Events.MessageCreate, async message => {
     const result = await chat(
       message.guild.id,
       message.content,
-      message.author.displayName || message.author.username
+      message.author.displayName || message.author.username,
+      Array.from(message.attachments.values())
     );
 
     clearInterval(typingInterval);
 
     // Construire la réponse
     let response = result.content;
+
+    // Indiquer si le modèle vision a été utilisé automatiquement
+    if (result.usedVisionFallback) {
+      response = `-# 🖼️ Image détectée → modèle vision utilisé automatiquement\n${response}`;
+    }
 
     // Afficher le reasoning si présent et activé
     if (result.reasoning && config.reasoning) {

@@ -1,7 +1,23 @@
 const { getGuildConfig } = require('./config');
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL = 'stepfun/step-3.5-flash:free';
+const DEFAULT_MODEL = 'stepfun/step-3.5-flash:free';
+const VISION_FALLBACK = 'meta-llama/llama-4-maverick:free';
+
+// Modèles qui supportent la vision
+const VISION_MODELS = [
+  'meta-llama/llama-4-maverick:free',
+  'meta-llama/llama-4-scout:free',
+  'google/gemma-3-27b-it:free',
+  'qwen/qwen-2.5-vl-72b-instruct:free',
+  'moonshotai/kimi-vl-a3b-thinking:free',
+  'nvidia/nemotron-nano-12b-2-vl:free',
+  'meta-llama/llama-3.2-11b-vision-instruct:free',
+];
+
+function isVisionModel(model) {
+  return VISION_MODELS.includes(model);
+}
 
 // Historique des conversations par guild
 const conversationHistory = new Map();
@@ -24,19 +40,105 @@ function resetHistory(guildId) {
 }
 
 /**
+ * Télécharge une image et la convertit en base64
+ */
+async function imageUrlToBase64(url) {
+  const response = await fetch(url);
+  const buffer = await response.arrayBuffer();
+  const base64 = Buffer.from(buffer).toString('base64');
+  const contentType = response.headers.get('content-type') || 'image/png';
+  return { base64, contentType };
+}
+
+/**
+ * Construit le contenu du message avec les pièces jointes (multimodal)
+ */
+async function buildMessageContent(text, attachments, username) {
+  const content = [];
+
+  // Ajouter le texte
+  if (text) {
+    content.push({
+      type: 'text',
+      text: `[${username}]: ${text}`,
+    });
+  }
+
+  // Traiter les pièces jointes
+  for (const attachment of attachments) {
+    const url = attachment.url;
+    const contentType = attachment.contentType || '';
+
+    if (contentType.startsWith('image/')) {
+      // Image : envoyer comme URL directe (OpenRouter le supporte)
+      content.push({
+        type: 'image_url',
+        image_url: { url },
+      });
+    } else if (contentType === 'application/pdf') {
+      // PDF : envoyer comme fichier
+      try {
+        const response = await fetch(url);
+        const buffer = await response.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString('base64');
+        content.push({
+          type: 'file',
+          file: {
+            filename: attachment.name || 'document.pdf',
+            data: `data:application/pdf;base64,${base64}`,
+          },
+        });
+      } catch (err) {
+        content.push({
+          type: 'text',
+          text: `[Fichier joint: ${attachment.name} - impossible de traiter]`,
+        });
+      }
+    } else {
+      // Autres fichiers : mentionner le nom
+      content.push({
+        type: 'text',
+        text: `[Fichier joint: ${attachment.name} (${contentType})]`,
+      });
+    }
+  }
+
+  return content;
+}
+
+/**
  * Envoie un message au LLM via OpenRouter et retourne la réponse
  */
-async function chat(guildId, userMessage, username) {
+async function chat(guildId, userMessage, username, attachments = []) {
   const config = getGuildConfig(guildId);
   const history = getHistory(guildId);
+
+  // Détecter si il y a des images dans les pièces jointes
+  const hasImages = attachments.some(a => (a.contentType || '').startsWith('image/'));
+
+  // Auto-switch : utiliser le modèle vision si images détectées
+  let model = config.model || DEFAULT_MODEL;
+  let usedVisionFallback = false;
+  if (hasImages && !isVisionModel(model)) {
+    model = VISION_FALLBACK;
+    usedVisionFallback = true;
+  }
+
+  // Construire le contenu du message (texte simple ou multimodal)
+  let messageContent;
+  if (attachments.length > 0) {
+    messageContent = await buildMessageContent(userMessage, attachments, username);
+  } else {
+    messageContent = `[${username}]: ${userMessage}`;
+  }
 
   // Ajouter le message utilisateur à l'historique
   history.push({
     role: 'user',
-    content: `[${username}]: ${userMessage}`,
+    content: messageContent,
   });
 
-  // Limiter l'historique à 50 messages pour éviter de dépasser les limites
+  // Limiter l'historique à 50 messages
   if (history.length > 50) {
     history.splice(0, history.length - 50);
   }
@@ -52,7 +154,7 @@ async function chat(guildId, userMessage, username) {
 
   // Construire le body de la requête
   const body = {
-    model: MODEL,
+    model,
     messages,
   };
 
@@ -99,7 +201,8 @@ async function chat(guildId, userMessage, username) {
     return {
       content: assistantMessage,
       reasoning: reasoning,
-      model: data.model || MODEL,
+      model: data.model || model,
+      usedVisionFallback,
     };
   } catch (err) {
     // Retirer le dernier message user en cas d'erreur
