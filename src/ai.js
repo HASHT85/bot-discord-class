@@ -1,6 +1,6 @@
 const { getGuildConfig } = require('./config');
 
-const WRM_URL = 'https://api.wrmgpt.com/v1/chat/completions';
+const WRM_URL = 'https://api.cyberneurova.ai/v1/chat/completions';
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL = 'wormgpt-v7';
 const ANALYSIS_MODEL = 'google/gemini-2.0-flash-001';
@@ -91,7 +91,7 @@ async function analyzeMediaWithGemini(attachments) {
  */
 async function callAIProvider(model, messages) {
   if (!process.env.WRM_API_KEY) {
-    throw new Error('WRM_API_KEY manquante dans le fichier .env');
+    throw new Error('WRM_API_KEY (CyberNeurova) manquante dans le fichier .env');
   }
 
   const response = await fetch(WRM_URL, {
@@ -127,7 +127,7 @@ async function callAIProvider(model, messages) {
     return JSON.parse(cleanJson);
   } catch (err) {
     console.error('❌ Erreur de parsing JSON:', err.message);
-    throw new Error(`Format de réponse invalide de l'API WRM`);
+    throw new Error(`Format de réponse invalide de l'API CyberNeurova`);
   }
 }
 
@@ -170,7 +170,7 @@ async function chat(guildId, userMessage, username, attachments = []) {
   ];
 
   try {
-    console.log(`🔄 Appel WRM avec ${model}...`);
+    console.log(`🔄 Appel CyberNeurova avec ${model}...`);
     const data = await callAIProvider(model, messages);
 
     if (!data.choices || data.choices.length === 0) {
@@ -188,7 +188,7 @@ async function chat(guildId, userMessage, username, attachments = []) {
     };
   } catch (err) {
     history.pop();
-    console.error(`❌ Erreur WRM:`, err.message);
+    console.error(`❌ Erreur CyberNeurova:`, err.message);
     if (err.body) console.error(`Body:`, err.body);
     throw new Error(`⏳ Erreur lors de l'appel à l'IA: ${err.message}`);
   }
